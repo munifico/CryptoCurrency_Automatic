@@ -4,8 +4,12 @@ import datetime
 import backtesting
 import numpy as np
 fees = 0.0005  
-access_key = "Nu2Qh5rQ5xTZXol6xExA92bWoksFDoLv1QeGnlHk"
-secret_key = "ZoywwKzXyQXO6xEGC7xyKJPyxIaVcB3plq0u9Afx"
+access_key = None
+secret_key = None
+with open("pyupbit_key.txt") as f:
+    lines = f.readlines()
+    access_key = lines[0].strip()
+    secret_key = lines[1].strip()
 upbit = pyupbit.Upbit(access_key, secret_key)
 
 days_for_best_k = 21

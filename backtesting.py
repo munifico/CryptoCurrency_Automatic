@@ -76,9 +76,6 @@ def get_mdd(df):
         return min_ror
     
 def backtest(ticker, count):
-    '''
-        target 형식은 df['open'], df['close'], df['high'], df['low']의 형식이어야 함.
-    '''
     df =make_df(ticker=ticker, count=count)
     
     Kchange = True

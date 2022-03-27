@@ -114,7 +114,7 @@ def run(ticker):
             print_info(ticker)
             sell_crypto_currency(ticker)
 
-        if now.minute == 6 and 0 < now.second < 3:
+        if now.minute == 0 and 0 < now.second < 3:
             to = datetime.datetime.now() + datetime.timedelta(days=-(days_for_best_k-1))
             k = get_best_K(to=to, ticker=ticker)
             print("현재 시간 : " + str(now), end="")

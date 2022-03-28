@@ -76,12 +76,16 @@ def print_info(ticker):
 
 # 최적의 K 구하기
 def get_crr(df, K):
-    df['range'] = df['high'].shift(1)-df['low'].shift(1) # 전날 고가 - 저가
-    df['target_price'] = df['open'] + df['range'] * K
-    df['ror_commision'] = np.where(df['high'] > df['target_price'], 
+    try:
+        df['range'] = df['high'].shift(1)-df['low'].shift(1) # 전날 고가 - 저가
+        df['target_price'] = df['open'] + df['range'] * K
+        df['ror_commision'] = np.where(df['high'] > df['target_price'], 
                          (df['close'] / (1 + fees)) / (df['target_price'] * (1 + fees)), 
                          1)
-    return df['ror_commision'].cumprod()[-2]
+        return df['ror_commision'].cumprod()[-2]
+    except:
+        print("error : ")
+        return None
 
 def get_best_K(to, ticker):
     if to is None:
@@ -92,6 +96,8 @@ def get_best_K(to, ticker):
     best_K = 0.5
     for k in np.arange(0.1, 1.0, 0.1):
         crr = get_crr(df=df,K=k)
+        if crr is None:
+            return None
         if crr > max_ror:
             max_ror = crr
             best_K = k
@@ -138,9 +144,13 @@ def showBuyThings():
         target_price = get_target_price(ticker)
         current_price = pyupbit.get_current_price(ticker)
         if target_price < current_price:
-            print(ticker + "K : " + str(get_best_K(to=None, ticker=ticker)), end = "")
-            print(" current price : {}, target price : {}".format(current_price , target_price), end="")
-            print(" mdd_30_days : {}".format(backtesting.get_mdd(df=backtesting.make_df(ticker=ticker, count = 100))))
+            k = get_best_K(to=None, ticker=ticker)
+            if k is None:
+                print(ticker)
+            else:                
+                print(ticker + " K : " + str(k), end = "")
+                print(" current price : {}, target price : {}".format(current_price , target_price), end="")
+                print(" mdd_30_days : {}".format(backtesting.get_mdd(df=backtesting.make_df(ticker=ticker, count = 100))))
             
 
 if __name__ == '__main__':

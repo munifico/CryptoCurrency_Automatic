@@ -17,8 +17,10 @@ def run(ticker):
     
     now = datetime.datetime.now()
     
-    market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=1,hours=9)
-    
+    if datetime.datetime.now().hour < 9:
+        market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=0,hours=9)
+    else:
+        market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=1,hours=9)
     upbit_print.print_info(ticker = ticker, df=df, k=best_k, market_open=market_open)
     
     while True:
@@ -42,4 +44,4 @@ def run(ticker):
         time.sleep(1)
         
 if __name__ == "__main__":
-    run(ticker="KRW-ARK")
+    run(ticker="KRW-MOC")

@@ -12,6 +12,8 @@ def print_info(ticker, df, k, market_open):
         df : 매매 코인의 ohlcv
         k : best_k
         market_open : 마켓 오픈 시간
+
+        print infos
     '''
     now = datetime.datetime.now()
     target_price = upbit_get_info.get_target_price(ticker=ticker)

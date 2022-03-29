@@ -3,6 +3,8 @@ import time
 import pyupbit
 import datetime
 
+INF = 9999999
+
 def get_crr(df,k,fees):
     '''
         df : ohlcv가 들어있는 dataframe
@@ -11,6 +13,7 @@ def get_crr(df,k,fees):
         
         return df.cumprod[-2]
     '''
+    #print(df)
     df['range'] = df['high'].shift(1) - df['low'].shift(1)
     df['target_price'] = df['open'] + df['range'] * k
     df['ror_commision'] = np.where(df['high'] > df['target_price'], 
@@ -29,6 +32,10 @@ def get_best_k(ticker, count, range_upper, fees):
     '''
     to = datetime.datetime.now() + datetime.timedelta(days=-(count))
     df = pyupbit.get_ohlcv(ticker, to=to, interval="day", count=count+1)
+    if df is None:
+        print(ticker, df, INF)
+        return INF
+
     time.sleep(0.05)
     max_ror = 0
     best_k = 0.5
@@ -95,6 +102,8 @@ def make_df(ticker, count, fees, k):
         count : 거래 코인 종목의 ohlcv 일수
         fees : 수수료
         k : best_k
+
+        return df
     '''
     df = pyupbit.get_ohlcv(ticker=ticker,count=count)
     df['range'] = df['high'].shift(1)-df['low'].shift(1)
@@ -112,3 +121,18 @@ def make_df(ticker, count, fees, k):
                                    (df['close'] / (1 + fees)) / (df['target_price_with_0.5'] * (1 + fees)), 
                                    1)
     return df
+
+def showBuyThings():
+    '''
+        print ticker that satisfied condition
+    '''
+    tickers = pyupbit.get_tickers(fiat="KRW")
+    print(tickers)
+    for ticker in tickers:
+        target_price = get_target_price(ticker)
+        current_price = pyupbit.get_current_price(ticker)
+        if target_price < current_price:
+            k = get_best_k(ticker=ticker, count=20, range_upper=0.1, fees=0.005)
+            print(ticker + " K : " + str(k), end = "")
+            print(" current price : {}, target price : {}".format(current_price , target_price), end="")
+            print(" mdd_30_days : {}".format(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20)))

@@ -34,15 +34,16 @@ def run(ticker):
             market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=1,hours=9)
             upbit_print.print_info(ticker=ticker, df=df, k=best_k, market_open=market_open)
             upbit_buy_and_sell.sell_crypto_currency(ticker=ticker, unit = upbit.get_balance(ticker))
+            time.sleep(1)
+            print("start making xlsx")
+            upbit_get_info.showBuyThings()
+            print("done")
             
         if now.minute == 0 and 0 < now.second < 3:
             best_k = upbit_get_info.get_best_k(ticker = ticker, count = 20, range_upper=0.1, fees=FEE)
             print("현재 시간 : " + str(now), end="")
             print(" BEST K : " + str(best_k))
-            time.sleep(1)
-            print("start making xlsx")
-            upbit_get_info.showBuyThings()
-            print("done")
+            
         # if target_price < current_price:
         #     upbit_buy_and_sell.buy_crypto_current(ticker=ticker, fees=FEE, krw=upbit.get_balance("KRW"))
         

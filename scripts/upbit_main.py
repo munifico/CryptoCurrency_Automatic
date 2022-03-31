@@ -1,6 +1,7 @@
 from re import U
 import upbit_buy_and_sell
 import upbit_get_info
+import upbit_showbalance
 import upbit_print
 import account_keys
 import pyupbit
@@ -38,8 +39,11 @@ def run(ticker):
             best_k = upbit_get_info.get_best_k(ticker = ticker, count = 20, range_upper=0.1, fees=FEE)
             print("현재 시간 : " + str(now), end="")
             print(" BEST K : " + str(best_k))
-        if target_price < current_price:
-            upbit_buy_and_sell.buy_crypto_current(ticker=ticker, fees=FEE, krw=upbit.get_balance("KRW"))
+            print("start making xlsx")
+            upbit_get_info.showBuyThings()
+            print("done")
+        # if target_price < current_price:
+        #     upbit_buy_and_sell.buy_crypto_current(ticker=ticker, fees=FEE, krw=upbit.get_balance("KRW"))
         
         time.sleep(1)
         

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import time
 import pyupbit
 import datetime
@@ -30,13 +31,13 @@ def get_best_k(ticker, count, range_upper, fees):
         
         return best_k
     '''
+    time.sleep(0.1)
     to = datetime.datetime.now() + datetime.timedelta(days=-(count))
     df = pyupbit.get_ohlcv(ticker, to=to, interval="day", count=count+1)
     if df is None:
         print(ticker, df, INF)
         return INF
 
-    time.sleep(0.05)
     max_ror = 0
     best_k = 0.5
     for k in np.arange(0.1, 1.0, range_upper):
@@ -44,7 +45,6 @@ def get_best_k(ticker, count, range_upper, fees):
         if crr > max_ror:
             max_ror = crr
             best_k = k
-    
     return best_k
 
 def get_mdd(df, mdd_get_days):
@@ -57,6 +57,9 @@ def get_mdd(df, mdd_get_days):
     INF = 999999.0
     if df['ror_commision'] is None:
         return None
+    
+    if len(df) < mdd_get_days:
+        return INF
     min_ror = INF
     for i in range(-mdd_get_days, -1, 1):
         if df['ror_commision'][i] < min_ror:
@@ -95,7 +98,9 @@ def get_current_price(ticker):
     real_current_price = orderbook['orderbook_units'][0]['ask_price']
     
     return real_current_price
-    
+
+def get_volume(df):
+    return df['volume']
 def make_df(ticker, count, fees, k):
     '''
         ticker : 거래 코인 종목
@@ -128,11 +133,48 @@ def showBuyThings():
     '''
     tickers = pyupbit.get_tickers(fiat="KRW")
     print(tickers)
+    right_ticker = []
+    right_mdd = []
+    right_k = []
+    right_current_price = []
+    right_target_price = []
+    dif = []
     for ticker in tickers:
         target_price = get_target_price(ticker)
         current_price = pyupbit.get_current_price(ticker)
-        if target_price < current_price:
-            k = get_best_k(ticker=ticker, count=20, range_upper=0.1, fees=0.005)
-            print(ticker + " K : " + str(k), end = "")
-            print(" current price : {}, target price : {}".format(current_price , target_price), end="")
-            print(" mdd_30_days : {}".format(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20)))
+        k = get_best_k(ticker=ticker, count=20, range_upper=0.1, fees=0.005)
+        right_ticker.append(ticker)
+        right_mdd.append(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20))
+        right_k.append(k)
+        right_current_price.append(current_price)
+        right_target_price.append(target_price)
+        #dif.append((current_price - target_price)/current_price)
+        # print(ticker + " K : " + str(k), end = "")
+        # print(" current price : {}, target price : {}".format(current_price , target_price), end="")
+        # print(" mdd_30_days : {}".format(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20)))
+
+    # for ticker in tickers:
+    #     target_price = get_target_price(ticker)
+    #     current_price = pyupbit.get_current_price(ticker)
+    #     if target_price < current_price:
+    #         k = get_best_k(ticker=ticker, count=20, range_upper=0.1, fees=0.005)
+    #         right_ticker.append(ticker)
+    #         right_mdd.append(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20))
+    #         right_k.append(k)
+    #         right_current_price.append(current_price)
+    #         right_target_price.append(target_price)
+    #         # print(ticker + " K : " + str(k), end = "")
+    #         # print(" current price : {}, target price : {}".format(current_price , target_price), end="")
+    #         # print(" mdd_30_days : {}".format(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20)))
+    info_dic={
+        #'right_ticker' : right_ticker,
+        'right_mdd' : right_mdd,
+        'right_k' : right_k,
+        'right_current_price' : right_current_price,
+        'right_target_price' : right_target_price
+        #'dif' : dif
+    }
+    indexName = right_ticker
+    dataframe = pd.DataFrame(info_dic, indexName)
+    dataframe = dataframe.sort_values(by=['right_mdd'],ascending=False)
+    dataframe.to_excel("./result.xlsx")

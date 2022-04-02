@@ -16,7 +16,7 @@ def print_info(ticker, df, k, market_open):
         print infos
     '''
     now = datetime.datetime.now()
-    target_price = upbit_get_info.get_target_price(ticker=ticker)
+    target_price = upbit_get_info.get_target_price(ticker=ticker, k = k)
     current_price = pyupbit.get_current_price(ticker)
     print("market_open : " + str(market_open))
     print("TICKER : " + str(ticker))

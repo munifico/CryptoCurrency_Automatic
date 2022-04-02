@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import pyupbit
 import datetime
+from sys import stdout
 
 INF = 9999999
 
@@ -33,7 +34,7 @@ def get_best_k(ticker, count, range_upper, fees):
     '''
     time.sleep(0.1)
     to = datetime.datetime.now() + datetime.timedelta(days=-(count))
-    df = pyupbit.get_ohlcv(ticker, to=to, interval="day", count=count+1)
+    df = pyupbit.get_ohlcv(ticker, interval="day", count=count+1)
     if df is None:
         print(ticker, df, INF)
         return INF
@@ -45,7 +46,17 @@ def get_best_k(ticker, count, range_upper, fees):
         if crr > max_ror:
             max_ror = crr
             best_k = k
+    
+    # print("GETTING BEST K : ")
+    # print(df)
     return best_k
+
+def get_best_k_noise(ticker):
+    df = pyupbit.get_ohlcv(ticker=ticker, interval="day", count=21)
+    df['noise'] = 1 - ( abs(df['open'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1)))
+    noise_k = df['noise'].mean()
+    #print(df)
+    return noise_k
 
 def get_mdd(df, mdd_get_days):
     '''
@@ -70,7 +81,7 @@ def get_mdd(df, mdd_get_days):
     else:
         return min_ror
     
-def get_target_price(ticker):
+def get_target_price(ticker, k):
     '''
         ticker : 매매하려는 코인 종듬듬
         df : 매매 코인의 ohlcv
@@ -78,7 +89,7 @@ def get_target_price(ticker):
         return target_price
     '''
     days_for_best_k = 20
-    
+     
     df = pyupbit.get_ohlcv(ticker) # 새로운 target price를 위해 df를 새로 만듬
     yesterday = df.iloc[-2]
     
@@ -86,8 +97,6 @@ def get_target_price(ticker):
     yesterday_high = yesterday['high']
     yesterday_low = yesterday['low']
     
-    k = get_best_k(ticker = ticker, count = days_for_best_k,
-                   range_upper=0.1, fees = 0.0005)
     
     target_price = today_open + (yesterday_high - yesterday_low) * k
     
@@ -136,18 +145,30 @@ def showBuyThings():
     right_ticker = []
     right_mdd = []
     right_k = []
+    right_k_noise = []
     right_current_price = []
     right_target_price = []
-    dif = []
-    for ticker in tickers:
-        target_price = get_target_price(ticker)
-        current_price = pyupbit.get_current_price(ticker)
+    right_noise_target_price = []
+    gap_ratio = []
+    for index, ticker in list(enumerate(tickers)):
         k = get_best_k(ticker=ticker, count=20, range_upper=0.1, fees=0.005)
+        noise_k = get_best_k_noise(ticker=ticker)
+        target_price = get_target_price(ticker, k)
+        noise_target_price = get_target_price(ticker,noise_k)
+        current_price = pyupbit.get_current_price(ticker)
         right_ticker.append(ticker)
         right_mdd.append(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20))
         right_k.append(k)
+        right_k_noise.append(noise_k)
         right_current_price.append(current_price)
         right_target_price.append(target_price)
+        right_noise_target_price.append(noise_target_price)
+        gap_ratio.append((current_price - target_price) / target_price *100)
+
+        progress = 100 * (index+1) / len(tickers)
+        stdout.write("\r{}% completed, Now : {}".format(progress, ticker))
+        stdout.flush()
+        
         #dif.append((current_price - target_price)/current_price)
         # print(ticker + " K : " + str(k), end = "")
         # print(" current price : {}, target price : {}".format(current_price , target_price), end="")
@@ -166,15 +187,20 @@ def showBuyThings():
     #         # print(ticker + " K : " + str(k), end = "")
     #         # print(" current price : {}, target price : {}".format(current_price , target_price), end="")
     #         # print(" mdd_30_days : {}".format(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20)))
+    stdout.write("\n")
     info_dic={
         #'right_ticker' : right_ticker,
         'right_mdd' : right_mdd,
         'right_k' : right_k,
+        'right_noise_k' : right_k_noise,
         'right_current_price' : right_current_price,
-        'right_target_price' : right_target_price
-        #'dif' : dif
+        'right_target_price' : right_target_price,
+        'right_noise_target_price' : right_noise_target_price,
+        'gap_ratio' : gap_ratio
     }
     indexName = right_ticker
     dataframe = pd.DataFrame(info_dic, indexName)
-    dataframe = dataframe.sort_values(by=['right_mdd'],ascending=False)
-    dataframe.to_excel("./result.xlsx")
+    dataframe = dataframe.sort_values(by=['gap_ratio','right_mdd'],ascending=False)
+    dataframe.to_excel("./{} result.xlsx".format(datetime.datetime.now()))
+
+    return dataframe

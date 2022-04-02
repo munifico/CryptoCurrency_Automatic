@@ -7,79 +7,82 @@ from sys import stdout
 
 INF = 9999999
 
-def get_crr(df,k,fees):
-    '''
-        df : ohlcv가 들어있는 dataframe
-        k : 변동성 돌파 전략의 k값
-        fees : 매매 수수료
+# def get_crr(df,k,fees):
+#     '''
+#         df : ohlcv가 들어있는 dataframe
+#         k : 변동성 돌파 전략의 k값
+#         fees : 매매 수수료
         
-        return df.cumprod[-2]
-    '''
-    #print(df)
-    df['range'] = df['high'].shift(1) - df['low'].shift(1)
-    df['target_price'] = df['open'] + df['range'] * k
-    df['ror_commision'] = np.where(df['high'] > df['target_price'], 
-                         (df['close'] / (1 + fees)) / (df['target_price'] * (1 + fees)), 
-                         1)
-    return df['ror_commision'].cumprod()[-2]
+#         return df.cumprod[-2]
+#     '''
+#     #print(df)
+#     df['range'] = df['high'].shift(1) - df['low'].shift(1)
+#     df['target_price'] = df['open'] + df['range'] * k
+#     df['ror_commision'] = np.where(df['high'] > df['target_price'], 
+#                          (df['close'] / (1 + fees)) / (df['target_price'] * (1 + fees)), 
+#                          1)
+#     return df['ror_commision'].cumprod()[-2]
 
-def get_best_k(ticker, count, range_upper, fees):
-    '''
-        ticker : 코인 종목
-        count : BEST K를 구할 때 며칠 전 데이터부터 이용할건지
-        range_upper : k값을 몇 씩 올려가며 테스트해볼건지
-        fees : 수수료
+# def old_get_best_k(ticker, count, range_upper, fees):
+#     '''
+#         ticker : 코인 종목
+#         count : BEST K를 구할 때 며칠 전 데이터부터 이용할건지
+#         range_upper : k값을 몇 씩 올려가며 테스트해볼건지
+#         fees : 수수료
         
-        return best_k
-    '''
-    time.sleep(0.1)
-    to = datetime.datetime.now() + datetime.timedelta(days=-(count))
-    df = pyupbit.get_ohlcv(ticker, interval="day", count=count+1)
-    if df is None:
-        print(ticker, df, INF)
-        return INF
+#         return best_k
+#     '''
+#     time.sleep(0.1)
+#     to = datetime.datetime.now() + datetime.timedelta(days=-(count))
+#     df = pyupbit.get_ohlcv(ticker, interval="day", count=count+1)
+#     if df is None:
+#         print(ticker, df, INF)
+#         return INF
 
-    max_ror = 0
-    best_k = 0.5
-    for k in np.arange(0.1, 1.0, range_upper):
-        crr = get_crr(df=df, k=k, fees = fees)
-        if crr > max_ror:
-            max_ror = crr
-            best_k = k
+#     max_ror = 0
+#     best_k = 0.5
+#     for k in np.arange(0.1, 1.0, range_upper):
+#         crr = get_crr(df=df, k=k, fees = fees)
+#         if crr > max_ror:
+#             max_ror = crr
+#             best_k = k
     
-    # print("GETTING BEST K : ")
-    # print(df)
-    return best_k
+#     # print("GETTING BEST K : ")
+#     # print(df)
+#     return best_k
 
-def get_best_k_noise(ticker):
-    df = pyupbit.get_ohlcv(ticker=ticker, interval="day", count=21)
+def get_best_k(ticker,count):
+    # time.sleep(0.1)
+    df = pyupbit.get_ohlcv(ticker=ticker, interval="day", count=count+1)
+    if df['high'].shift(1) is df['low'].shift(1):
+        return 999999
     df['noise'] = 1 - ( abs(df['open'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1)))
     noise_k = df['noise'].mean()
-    #print(df)
     return noise_k
 
-def get_mdd(df, mdd_get_days):
-    '''
-        df : ohlcv가 들어있는 dataframe
-        mdd_get_days : mdd를 구할 때 며칠 전부터 현재까지 구할건지
+# def get_mdd(df, mdd_get_days):
+#     '''
+#         df : ohlcv가 들어있는 dataframe
+#         mdd_get_days : mdd를 구할 때 며칠 전부터 현재까지 구할건지
         
-        return None or mdd
-    '''
-    INF = 999999.0
-    if df['ror_commision'] is None:
-        return None
+#         return None or mdd
+#     '''
+#     INF = 999999.0
+#     if df['ror_commision'] is None:
+#         return None
     
-    if len(df) < mdd_get_days:
-        return INF
-    min_ror = INF
-    for i in range(-mdd_get_days, -1, 1):
-        if df['ror_commision'][i] < min_ror:
-            min_ror = df['ror_commision'][i]
+#     if len(df) < mdd_get_days:
+#         return INF
+#     min_ror = INF
+#     for i in range(-mdd_get_days, -1, 1):
+#         if df['ror_commision'][i] < min_ror:
+#             min_ror = df['ror_commision'][i]
+#     print(df)
             
-    if min_ror == INF:
-        return None
-    else:
-        return min_ror
+#     if min_ror == INF:
+#         return None
+#     else:
+#         return min_ror
     
 def get_target_price(ticker, k):
     '''
@@ -89,7 +92,7 @@ def get_target_price(ticker, k):
         return target_price
     '''
     days_for_best_k = 20
-     
+    time.sleep(0.1)
     df = pyupbit.get_ohlcv(ticker) # 새로운 target price를 위해 df를 새로 만듬
     yesterday = df.iloc[-2]
     
@@ -130,10 +133,6 @@ def make_df(ticker, count, fees, k):
     df['ror_commision'] = np.where(df['high'] > df['target_Price'], 
                          (df['close'] / (1 + fees)) / (df['target_Price'] * (1 + fees)), 
                          1)
-    df['target_price_with_0.5'] = df['open'] + df['range']*0.5
-    df['ror_commision_with_0.5'] = np.where(df['high'] > df['target_price_with_0.5'], 
-                                   (df['close'] / (1 + fees)) / (df['target_price_with_0.5'] * (1 + fees)), 
-                                   1)
     return df
 
 def showBuyThings():
@@ -141,32 +140,25 @@ def showBuyThings():
         print ticker that satisfied condition
     '''
     tickers = pyupbit.get_tickers(fiat="KRW")
-    print(tickers)
+    #print(tickers)
     right_ticker = []
-    right_mdd = []
     right_k = []
-    right_k_noise = []
     right_current_price = []
     right_target_price = []
-    right_noise_target_price = []
     gap_ratio = []
+    print("START COLLECTING")
     for index, ticker in list(enumerate(tickers)):
-        k = get_best_k(ticker=ticker, count=20, range_upper=0.1, fees=0.005)
-        noise_k = get_best_k_noise(ticker=ticker)
+        k = get_best_k(ticker=ticker, count=20)
         target_price = get_target_price(ticker, k)
-        noise_target_price = get_target_price(ticker,noise_k)
         current_price = pyupbit.get_current_price(ticker)
         right_ticker.append(ticker)
-        right_mdd.append(get_mdd(df=make_df(ticker=ticker, count = 100,fees=0.005,k=k),mdd_get_days=20))
         right_k.append(k)
-        right_k_noise.append(noise_k)
         right_current_price.append(current_price)
         right_target_price.append(target_price)
-        right_noise_target_price.append(noise_target_price)
         gap_ratio.append((current_price - target_price) / target_price *100)
 
         progress = 100 * (index+1) / len(tickers)
-        stdout.write("\r{}% completed, Now : {}".format(progress, ticker))
+        stdout.write("\r{}% DONE, Now : {}".format(progress, ticker))
         stdout.flush()
         
         #dif.append((current_price - target_price)/current_price)
@@ -190,17 +182,15 @@ def showBuyThings():
     stdout.write("\n")
     info_dic={
         #'right_ticker' : right_ticker,
-        'right_mdd' : right_mdd,
         'right_k' : right_k,
-        'right_noise_k' : right_k_noise,
         'right_current_price' : right_current_price,
         'right_target_price' : right_target_price,
-        'right_noise_target_price' : right_noise_target_price,
         'gap_ratio' : gap_ratio
     }
     indexName = right_ticker
     dataframe = pd.DataFrame(info_dic, indexName)
-    dataframe = dataframe.sort_values(by=['gap_ratio','right_mdd'],ascending=False)
-    dataframe.to_excel("./{} result.xlsx".format(datetime.datetime.now()))
+    dataframe = dataframe.sort_values(by=['gap_ratio'],ascending=False)
+    now = datetime.datetime.now()
+    dataframe.to_excel("./{}_{}_{}_{}result.xlsx".format(now.month,now.day,now.hour,now.minute))
 
     return dataframe

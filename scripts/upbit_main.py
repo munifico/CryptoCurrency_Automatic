@@ -31,16 +31,16 @@ def run(ticker):
     while True:
         now = datetime.datetime.now()
         if market_open < now < market_open + datetime.timedelta(seconds=10):
-            target_price = upbit_get_info.get_target_price(ticker=ticker, k=best_k)
+            upbit_buy_and_sell.sell_crypto_currency(ticker=ticker, unit = upbit.get_balance(ticker))
             great_ticker = upbit_get_info.showBuyThings()
             great_ticker = great_ticker.index[0]
+            target_price = upbit_get_info.get_target_price(ticker=ticker, k=best_k)
             if great_ticker != "KRW-DOGE":
                 ticker = great_ticker   
             print("갱신된 NOW TICKER : {}".format(ticker))
             print("갱신된 target price : " + str(target_price))
             market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=1,hours=9)
             upbit_print.print_info(ticker=ticker, df=df, k=best_k, market_open=market_open)
-            upbit_buy_and_sell.sell_crypto_currency(ticker=ticker, unit = upbit.get_balance(ticker))
             time.sleep(1)
             print("start making xlsx")
             upbit_get_info.showBuyThings()

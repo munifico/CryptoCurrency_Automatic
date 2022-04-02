@@ -155,5 +155,5 @@ def showBuyThings():
 
 if __name__ == '__main__':
     #showBuyThings()
-    run("KRW-ARK")
+    run("KRW-MOC")
     

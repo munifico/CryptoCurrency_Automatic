@@ -5,6 +5,7 @@ import pyupbit
 import datetime
 from sys import stdout
 
+
 INF = 9999999
 
 # def get_crr(df,k,fees):
@@ -135,6 +136,60 @@ def make_df(ticker, count, fees, k):
                          1)
     return df
 
+def get_market_open():
+    now = datetime.datetime.now()
+    if datetime.datetime.now().hour < 9:
+        market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=0, hours=9)
+    else:
+        market_open = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(days=1, hours=9)
+    return market_open
+
+def get_avg_buy_price(ticker, upbit):
+    avg_buy_price = None
+    balance = upbit.get_balances()
+    for i in range(len(balance)):
+        if balance[i]['currency'] == ticker.split('-')[1]:
+            avg_buy_price = float(balance[i]['avg_buy_price'])
+    return avg_buy_price
+
+def isdamage(ticker, upbit, percent):
+    avg_buy_price = get_avg_buy_price(ticker=ticker, upbit=upbit)
+    current_price = get_current_price(ticker=ticker)
+    dmg_percent = (1-(current_price / avg_buy_price))*100
+    if dmg_percent > percent:
+        return True
+    else:
+        return False
+    
+def ismycoin(ticker, upbit):
+    balance = upbit.get_balances()
+    for i in range(len(balance)):
+        if balance[i]['currency'] == ticker.split("-")[1]:
+            return True
+    return False
+
+def get_my_coin(upbit, no_names):
+    '''
+        upbit : api 연결 정보
+        no_names : 거래하기 싫은 리스트
+    '''
+    ticker = None
+    balance = upbit.get_balances()
+    for i in range(len(balance)):
+        name = balance[i]['currency']
+        if name not in no_names:
+            ticker = str("KRW-" + name)
+    return ticker
+
+def Update(ticker,upbit):
+    K = get_best_k(ticker=ticker, count=20)
+    target_price = get_target_price(ticker=ticker, k=K)
+    current_price = get_current_price(ticker=ticker)
+    avg_buy_price = get_avg_buy_price(ticker=ticker, upbit=upbit)
+    market_open = get_market_open()
+    
+    return K, target_price, current_price, avg_buy_price, market_open
+    
 def showBuyThings():
     '''
         print ticker that satisfied condition

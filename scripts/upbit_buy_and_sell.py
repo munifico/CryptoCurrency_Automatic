@@ -2,6 +2,7 @@ import account_keys
 import upbit_get_info
 import pyupbit
 
+
 access_key, secret_key = account_keys.get_keys()
 upbit = pyupbit.Upbit(access_key, secret_key)
 
@@ -50,7 +51,7 @@ def sell_crypto_currency(ticker, unit):
         
         print sell_info
     '''
-    print("\n#### BUY CRYPTO_LIMIT ####")
+    print("\n#### SELL CRYPTO_LIMIT ####")
     ret = upbit.sell_market_order(ticker=ticker, volume=unit)
     if ret is not None:
         print(ret)

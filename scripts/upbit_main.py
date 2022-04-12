@@ -13,15 +13,29 @@ FEE = 0.0005
 
 
 def findcoin():
-    great_ticker = info.showBuyThings().index[0]
-    if great_ticker != "KRW-DOGE":
-        print("GREAT_TICKER : {}".format(great_ticker))
-        return great_ticker
+    target_ticker = info.showBuyThings().index[0]
+    K, target_price, current_price, avg_buy_price, market_open = info.Update(ticker=target_ticker, upbit=upbit)
+    if target_price < current_price:
+        if target_ticker != "KRW-DOGE":
+            great_ticker = target_ticker
+            print("GREAT_TICKER : {}".format(great_ticker))
+            return great_ticker
+    else:
+        return None
 
-def run(ticker=None, cutline=10):
+
+def run(ticker=None, cutline=5):
     while True:
         if ticker is None:
             ticker = findcoin()
+            if ticker is None:
+                my_ticker = info.get_my_coin(upbit=upbit, no_names=['KRW', 'VTHO', 'DOGE'])
+                if my_ticker is None:
+                    print("조건에 맞는 코인이 없습니다. 다시 검색합니다.")
+                    continue
+                else:
+                    print("내 ticker {}를 현재 ticker로 정의합니다".format(my_ticker))
+                    ticker = my_ticker
         
         # 들어온 ticker가 내 코인인지 확인
         if info.ismycoin(ticker=ticker, upbit=upbit):
@@ -46,16 +60,21 @@ def run(ticker=None, cutline=10):
                     ticker = None
                 else:
                     print("손해 BUT IN CUTLINE!")
-            # else:
+            else:
                 # 이익이라면
+                profit_percent = ((current_price / avg_buy_price)-1)*100
+                if profit_percent > 10:
+                    upbit_buy_and_sell.sell_crypto_currency(ticker=ticker, unit=upbit.get_balance(ticker=ticker))
+                    ticker = None
 
-        else: # 그 코인이 없다면 살지 말지 고민하기
-            K, target_price, current_price, avg_buy_price, market_open = info.Update(ticker=ticker, upbit=upbit)
-            if upbit.get_balance(ticker="KRW")*(1+FEE) > 5000:
-                print("gap이 가장 큰 코인을 소유하고 있지 않습니다. 구매합니다.")
-                upbit_buy_and_sell.buy_crypto_current(ticker=ticker, fees=FEE)
-            else: # ticker 변경
-                ticker = info.get_my_coin(upbit=upbit, no_names=['KRW', 'VTHO', 'DOGE'])
+        else: # 그 코인이 없다면 살지 말지 고민하기 # 없으면 1. 가지고 있는게 아예 없어서 사야하거나 2. 가지고 있는게 있어서 그걸로 계속 할지
+            my_ticker = info.get_my_coin(upbit=upbit, no_names=['KRW', 'VTHO', 'DOGE'])
+            if my_ticker is None:
+                if upbit.get_balance(ticker="KRW") * (1 + FEE) > 5000:
+                    print("gap이 가장 큰 코인을 소유하고 있지 않습니다. 구매합니다.")
+                    upbit_buy_and_sell.buy_crypto_current(ticker=ticker, fees=FEE)
+            else:
+                ticker = my_ticker
                 
             
 
@@ -63,4 +82,4 @@ if __name__ == "__main__":
     #print(str(datetime.datetime.now()))
     # run(ticker="KRW-NEAR", cutline=10)
     # run()
-    run(ticker="KRW-NEAR")
+    run()

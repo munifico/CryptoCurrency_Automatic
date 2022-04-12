@@ -57,7 +57,15 @@ def get_best_k(ticker,count):
     df = pyupbit.get_ohlcv(ticker=ticker, interval="day", count=count+1)
     if df['high'].shift(1) is df['low'].shift(1):
         return 999999
-    df['noise'] = 1 - ( abs(df['open'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1)))
+    df['noise'] = 1 - (abs(df['open'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1)))
+    noise_k = df['noise'].mean()
+    return noise_k
+
+def bakctesting_get_best_k(ticker,count,now):
+    df = pyupbit.get_ohlcv(ticker=ticker, interval="day", count=count+1, to=now)
+    if df['high'].shift(1) is df['low'].shift(1):
+        return 999999
+    df['noise'] = 1 - (abs(df['open'].shift(1) - df['close'].shift(1)) / (df['high'].shift(1) - df['low'].shift(1)))
     noise_k = df['noise'].mean()
     return noise_k
 
@@ -249,3 +257,4 @@ def showBuyThings():
     dataframe.to_excel("./{}_{}_{}_{}result.xlsx".format(now.month,now.day,now.hour,now.minute))
 
     return dataframe
+

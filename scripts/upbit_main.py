@@ -12,13 +12,29 @@ upbit = pyupbit.Upbit(access=access_key, secret=secret_key)
 FEE = 0.0005
 
 
-def findcoin():
-    target_ticker = info.showBuyThings().index[0]
+def findcoin(no_names=None):
+    coin_list = info.showBuyThings()
+    great_gap = 100
+    target_ticker = None
+    for g in range(len(coin_list)):
+        g_gap =  coin_list['gap_ratio'][g]
+        if g_gap > 0:
+            if great_gap > g_gap:
+                great_gap = g_gap
+
+    for coin in range(len(coin_list)):
+        if coin_list['gap_ratio'][coin] == great_gap:
+            target_ticker = coin_list.index[coin]
+
+    if target_ticker is None:
+        return None
+
     K, target_price, current_price, avg_buy_price, market_open = info.Update(ticker=target_ticker, upbit=upbit)
     if target_price < current_price:
-        if target_ticker != "KRW-DOGE":
+        if target_ticker not in no_names:
             great_ticker = target_ticker
             print("GREAT_TICKER : {}".format(great_ticker))
+            print(great_ticker)
             return great_ticker
     else:
         return None
@@ -27,7 +43,7 @@ def findcoin():
 def run(ticker=None, cutline=5):
     while True:
         if ticker is None:
-            ticker = findcoin()
+            ticker = findcoin(no_names=['KRW', 'VTHO', 'DOGE'])
             if ticker is None:
                 my_ticker = info.get_my_coin(upbit=upbit, no_names=['KRW', 'VTHO', 'DOGE'])
                 if my_ticker is None:
@@ -40,7 +56,10 @@ def run(ticker=None, cutline=5):
         # 들어온 ticker가 내 코인인지 확인
         if info.ismycoin(ticker=ticker, upbit=upbit):
             K, target_price, current_price, avg_buy_price, market_open = info.Update(ticker=ticker, upbit=upbit)
-            
+
+            if avg_buy_price is None: # 예외처리 : 중간에 사용자가 판매했을 경우
+                ticker = None
+
             upbit_print.print_info(
                     ticker=ticker,
                     target_price=target_price,

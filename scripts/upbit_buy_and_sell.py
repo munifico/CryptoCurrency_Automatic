@@ -13,6 +13,9 @@ def buy_crypto_current(ticker, fees, krw=None):
         
         print buy_info
     '''
+
+    file = open("history.txt",'a')
+
     if krw is None:
         krw = upbit.get_balance(ticker = "KRW") # get_info에서 가져오기로 변경하기
     krw_commision = krw*(1-fees)
@@ -20,6 +23,8 @@ def buy_crypto_current(ticker, fees, krw=None):
         print("\n#### BUY CRYPTO_CURRENT ####")
         ret = upbit.buy_market_order(ticker, krw*(1-fees))
         if ret is not None:
+            file.write("\n###BUY### + str(ret)")
+            file.close()
             print(ret)
         print("구매 코인 : {}, 구매한 원화량 : {}"
             .format(ticker, krw_commision))
@@ -32,6 +37,9 @@ def buy_crypto_limit(ticker, unit, fees, krw = None):
         
         print buy_info
     '''
+
+    file = open("history.txt", 'a')
+
     print("\n#### BUY CRYPTO_LIMIT ####")
     if krw is None:
         krw = upbit.get_balance(ticker = "KRW") # get_info에서 가져오기로 변경하기
@@ -40,6 +48,8 @@ def buy_crypto_limit(ticker, unit, fees, krw = None):
     upbit.buy_limit_order(ticker, real_current_price, unit)
     ret = upbit.buy_market_order(ticker, krw_commision)
     if ret is not None:
+        file.write("\n###BUY###" + str(ret))
+        file.close()
         print(ret)
     print("구매 코인 : {}, 구매한 코인량 : {}, 구매한 원화량 : {}"
           .format(ticker, unit, krw_commision))
@@ -51,8 +61,13 @@ def sell_crypto_currency(ticker, unit):
         
         print sell_info
     '''
+
+    file = open("history.txt", 'a')
+
     print("\n#### SELL CRYPTO_LIMIT ####")
     ret = upbit.sell_market_order(ticker=ticker, volume=unit)
     if ret is not None:
+        file.write("\n###SELL###" + str(ret))
+        file.close()
         print(ret)
     print("판매 개수 : {}".format(unit))
